@@ -76,7 +76,17 @@ function setupEventListeners() {
     document.getElementById('btn-qr').onclick = () => {
         document.getElementById('modal-backdrop').classList.remove('hidden');
         document.getElementById('modal-qr').classList.remove('hidden');
-        document.getElementById('qr-container').innerHTML = getQRCodeSVG(window.location.href);
+        const container = document.getElementById('qr-container');
+        container.innerHTML = "";
+
+        new QRCode(container, {
+            text: window.location.href,
+            width: 220,
+            height: 220,
+            colorDark: "#374151",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
     };
     document.getElementById('btn-close-qr').onclick = () => {
         document.getElementById('modal-backdrop').classList.add('hidden');

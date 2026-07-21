@@ -3,80 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>AirShare</title>
+
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <meta name="theme-color" content="#0F172A">
+
+    <meta name="theme-color" content="#FFF8F3">
+
+    <!-- Real QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
+
 <body>
-    <header>
-        <div class="logo">
-            <img src="favicon.svg" alt="Logo">
+
+<header>
+
+    <div class="logo">
+
+        <img src="favicon.svg" alt="AirShare Logo">
+
+        <div class="logo-text">
             <h1 id="app-title">AirShare</h1>
+            <span>Fast • Private • Local</span>
         </div>
-        <div class="header-actions">
-            <div id="my-identity">
-                <span class="status-dot green"></span>
-                <span id="my-name">Connecting...</span>
-            </div>
-            <button id="btn-share-text" aria-label="Send Text">📝 Send Text</button>
-            <button id="btn-qr" aria-label="Show QR">📱 QR Code</button>
-        </div>
-    </header>
 
-    <main>
-        <div class="drop-zone" id="drop-zone">
-            <h2>Online Users (<span id="user-count">0</span>)</h2>
-            <p class="subtitle">Click a user or drag & drop files onto them to transfer.</p>
-            <div id="user-grid" class="user-grid"></div>
-        </div>
-    </main>
-
-    <!-- Transfer Manager Overlay -->
-    <div id="transfer-overlay" class="hidden">
-        <div class="transfer-header">
-            <h3>Transfers</h3>
-            <button id="btn-close-transfers">✖</button>
-        </div>
-        <div id="transfer-list"></div>
     </div>
 
-    <!-- Modals -->
-    <div id="modal-backdrop" class="hidden"></div>
-    
-    <div id="modal-request" class="modal hidden">
-        <h3 id="request-title">Incoming File</h3>
-        <p id="request-info"></p>
-        <div class="modal-actions">
-            <button id="btn-decline" class="btn-danger">Decline</button>
-            <button id="btn-accept" class="btn-primary">Accept</button>
+    <div class="header-actions">
+
+        <div id="my-identity">
+            <span class="status-dot green"></span>
+            <span id="my-name">Connecting...</span>
         </div>
+
+        <button
+                id="btn-qr"
+                class="btn-primary"
+                aria-label="Share Network">
+            📱 Invite Device
+        </button>
+
     </div>
 
-    <div id="modal-text" class="modal hidden">
-        <h3>Send Plain Text</h3>
-        <textarea id="text-input" rows="5" placeholder="Type or paste text here..."></textarea>
-        <div class="modal-actions">
-            <button id="btn-cancel-text">Cancel</button>
-            <button id="btn-send-text" class="btn-primary">Select Recipient</button>
+</header>
+
+<main>
+
+    <section class="hero">
+
+        <h2>
+            Nearby Devices
+            <span id="user-count">0</span>
+        </h2>
+
+        <p class="subtitle">
+            Click a device or drag & drop files directly onto it.
+        </p>
+
+    </section>
+
+    <section
+            id="drop-zone"
+            class="drop-zone">
+
+        <div
+                id="user-grid"
+                class="user-grid">
         </div>
+
+    </section>
+
+</main>
+
+<!-- Transfers -->
+
+<div
+        id="transfer-overlay"
+        class="hidden">
+
+    <div class="transfer-header">
+
+        <h3>
+            📤 Transfers
+        </h3>
+
+        <button
+                id="btn-close-transfers"
+                aria-label="Close">
+            ✕
+        </button>
+
     </div>
 
-    <div id="modal-qr" class="modal hidden">
-        <h3>Share this Network</h3>
-        <div id="qr-container"></div>
-        <p>Scan to join this session.</p>
-        <div class="modal-actions">
-            <button id="btn-close-qr">Close</button>
-        </div>
+    <div id="transfer-list"></div>
+
+</div>
+
+<!-- Backdrop -->
+
+<div
+        id="modal-backdrop"
+        class="hidden">
+</div>
+
+<!-- Incoming transfer -->
+
+<div
+        id="modal-request"
+        class="modal hidden">
+
+    <h3>
+        Incoming File
+    </h3>
+
+    <p id="request-info"></p>
+
+    <div class="modal-actions">
+
+        <button
+                id="btn-decline"
+                class="btn-danger">
+            Decline
+        </button>
+
+        <button
+                id="btn-accept"
+                class="btn-primary">
+            Accept
+        </button>
+
     </div>
 
-    <div id="toast-container"></div>
+</div>
 
-    <input type="file" id="file-input" multiple style="display: none;">
-    <input type="file" id="folder-input" webkitdirectory style="display: none;">
+<!-- QR -->
 
-    <script type="module" src="app.js"></script>
+<div
+        id="modal-qr"
+        class="modal hidden">
+
+    <h3>
+        Invite another device
+    </h3>
+
+    <div id="qr-container"></div>
+
+    <p class="subtitle">
+        Scan this QR code on another device connected to the same network.
+    </p>
+
+    <div class="modal-actions">
+
+        <button
+                id="btn-close-qr"
+                class="btn-primary">
+            Done
+        </button>
+
+    </div>
+
+</div>
+
+<!-- Toasts -->
+
+<div id="toast-container"></div>
+
+<!-- Hidden Inputs -->
+
+<input
+        type="file"
+        id="file-input"
+        multiple
+        hidden>
+
+<input
+        type="file"
+        id="folder-input"
+        webkitdirectory
+        hidden>
+
+<script type="module" src="app.js"></script>
+
 </body>
 </html>
