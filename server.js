@@ -19,23 +19,16 @@ app.use((req, res, next) => {
     next();
 });
 
-// Provide client config
 app.get('/api/config', (req, res) => {
     res.json({
         appName: config.appName,
-        siteTitle: config.siteTitle,
-        stunServers: config.stunServers,
-        turnUrl: config.turnUrl,
-        turnUsername: config.turnUsername,
-        turnPassword: config.turnPassword
+        siteTitle: config.siteTitle
     });
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Store connected peers
 const peers = new Map();
-// Rate limiting per socket
 const rateLimits = new WeakMap();
 
 function broadcastUsers() {
@@ -52,43 +45,44 @@ wss.on('connection', (ws) => {
     ws.on('pong', () => { ws.isAlive = true; });
 
     ws.on('message', (message) => {
-        // Rate limiting
-        const rl = rateLimits.get(ws);
-        if (Date.now() - rl.lastReset > 1000) { rl.count = 0; rl.lastReset = Date.now(); }
-        rl.count++;
-        if (rl.count > 50) return; // Drop if > 50 msgs/sec
-
         try {
             const data = JSON.parse(message);
+
+            // Exempt high-throughput file chunks from strict signaling rate limits
+            if (data.type !== 'file-chunk') {
+                const rl = rateLimits.get(ws);
+                if (Date.now() - rl.lastReset > 1000) {
+                    rl.count = 0;
+                    rl.lastReset = Date.now();
+                }
+                rl.count++;
+                if (rl.count > 60) return; // Drop spam signaling messages
+            }
 
             switch (data.type) {
                 case 'hello':
                     peerId = data.peerId;
-                    // Prevent duplicate IDs safely
                     if (peers.has(peerId)) {
                         peers.get(peerId).ws.terminate();
                     }
-                    // Sanitize input
-                    const cleanName = String(data.name).substring(0, 30);
-                    const cleanDevice = String(data.device).substring(0, 30);
-                    const cleanBrowser = String(data.browser).substring(0, 30);
-
                     peers.set(peerId, {
                         ws,
-                        info: { id: peerId, name: cleanName, device: cleanDevice, browser: cleanBrowser }
+                        info: {
+                            id: peerId,
+                            name: String(data.name).substring(0, 30),
+                            device: String(data.device).substring(0, 30),
+                            browser: String(data.browser).substring(0, 30)
+                        }
                     });
                     broadcastUsers();
                     break;
 
-                case 'offer':
-                case 'answer':
-                case 'candidate':
-                case 'request':
-                case 'accept':
-                case 'reject':
-                case 'cancel':
-                case 'resume-request':
-                case 'resume-accept':
+                case 'file-request':
+                case 'file-accept':
+                case 'file-reject':
+                case 'file-cancel':
+                case 'file-chunk':
+                case 'file-complete':
                     if (data.to && peers.has(data.to)) {
                         data.from = peerId;
                         peers.get(data.to).ws.send(JSON.stringify(data));
@@ -96,7 +90,7 @@ wss.on('connection', (ws) => {
                     break;
 
                 default:
-                    if (config.logLevel === 'debug') console.log('Unknown message type:', data.type);
+                    break;
             }
         } catch (err) {
             // Drop malformed packets
@@ -111,7 +105,6 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Heartbeat
 const interval = setInterval(() => {
     wss.clients.forEach((ws) => {
         if (ws.isAlive === false) return ws.terminate();
@@ -123,5 +116,5 @@ const interval = setInterval(() => {
 wss.on('close', () => clearInterval(interval));
 
 server.listen(config.port, () => {
-    console.log(`🚀 ${config.appName} Signaling Server running on port ${config.port}`);
+    console.log(`🚀 ${config.appName} Relay Server running on port ${config.port}`);
 });

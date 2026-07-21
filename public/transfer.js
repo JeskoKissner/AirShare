@@ -1,4 +1,4 @@
-import { state, createTransferUI, showToast } from './ui.js';
+import { state, createTransferUI } from './ui.js';
 import { sendSignaling } from './websocket.js';
 import { formatBytes, computeSHA256 } from './utils.js';
 import { playSound } from './sounds/audio.js';
@@ -7,18 +7,18 @@ const CHUNK_SIZE = 64 * 1024; // 64 KB
 
 export function initiateTransfer(peerId, file) {
     const fileId = crypto.randomUUID();
-    
-    const ui = createTransferUI(fileId, file, file.type, 'out', 
+
+    const ui = createTransferUI(fileId, file, file.type, 'out',
         () => cancelTransfer(fileId, peerId),
-        () => retryTransfer(fileId, peerId)
+        () => {}
     );
 
     state.transfers[fileId] = {
-        id: fileId, file, peerId, ui, offset: 0, cancelled: false
+        id: fileId, file, peerId, ui, cancelled: false
     };
 
     sendSignaling({
-        type: 'request',
+        type: 'file-request',
         to: peerId,
         file: { id: fileId, name: file.name, size: file.size, type: file.type }
     });
@@ -29,125 +29,110 @@ function cancelTransfer(fileId, peerId) {
     if (t) {
         t.cancelled = true;
         t.ui.error('Cancelled');
-        sendSignaling({ type: 'cancel', to: peerId, fileId });
+        sendSignaling({ type: 'file-cancel', to: peerId, fileId });
     }
 }
 
-function retryTransfer(fileId, peerId) {
-    const t = state.transfers[fileId];
-    if (t) {
-        t.cancelled = false;
-        t.ui.updateProgress(0, t.file.size, '0 B');
-        sendSignaling({ type: 'resume-request', to: peerId, fileId });
-    }
-}
-
-export async function startSendingChunks(fileId, channel) {
+export async function startSendingFile(fileId) {
     const t = state.transfers[fileId];
     if (!t) return;
-    
+
     const file = t.file;
-    let offset = t.offset || 0;
+    let offset = 0;
     const reader = new FileReader();
     let lastTime = Date.now();
     let bytesSinceLast = 0;
 
-    channel.bufferedAmountLowThreshold = 1024 * 512; // 512 KB backpressure threshold
-
-    const readSlice = (o) => {
-        const slice = file.slice(offset, o + CHUNK_SIZE);
+    const readNextSlice = () => {
+        if (t.cancelled) return;
+        const slice = file.slice(offset, offset + CHUNK_SIZE);
         reader.readAsArrayBuffer(slice);
     };
 
     reader.onload = async (e) => {
-        if (t.cancelled) { channel.close(); return; }
-        
-        const chunk = e.target.result;
-        
-        // Wait if buffer is full (Backpressure flow control)
-        while (channel.bufferedAmount > channel.bufferedAmountLowThreshold) {
-            await new Promise(r => {
-                channel.onbufferedamountlow = () => { channel.onbufferedamountlow = null; r(); };
-            });
-        }
+        if (t.cancelled) return;
+        const buffer = e.target.result;
 
-        if (channel.readyState !== 'open') return;
-        channel.send(chunk);
-        
-        offset += chunk.byteLength;
-        bytesSinceLast += chunk.byteLength;
-        
+        // Convert ArrayBuffer to Base64 for safe JSON WebSocket transport
+        const base64Chunk = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+        sendSignaling({
+            type: 'file-chunk',
+            to: t.peerId,
+            fileId: fileId,
+            chunk: base64Chunk
+        });
+
+        offset += buffer.byteLength;
+        bytesSinceLast += buffer.byteLength;
+
         const now = Date.now();
-        if (now - lastTime > 500) {
-            const speed = (bytesSinceLast / ((now - lastTime)/1000));
+        if (now - lastTime > 400) {
+            const speed = (bytesSinceLast / ((now - lastTime) / 1000));
             t.ui.updateProgress(offset, file.size, formatBytes(speed));
             bytesSinceLast = 0;
             lastTime = now;
         }
 
         if (offset < file.size) {
-            readSlice(offset);
+            // Small throttle to prevent flooding socket buffer
+            setTimeout(readNextSlice, 5);
         } else {
             t.ui.updateProgress(file.size, file.size, '0 B');
             t.ui.complete();
             playSound('success');
-            // Send End-Of-File marker via metadata channel, or just close.
-            setTimeout(() => channel.close(), 1000); 
         }
     };
 
-    readSlice(offset);
+    readNextSlice();
 }
 
-export function handleIncomingFile(channel) {
-    const fileId = channel.label.replace('file-', '');
-    let fileMeta = null;
-    let receivedChunks = [];
-    let receivedSize = 0;
-    let lastTime = Date.now();
-    let bytesSinceLast = 0;
+export function handleIncomingChunk(msg) {
+    const t = state.transfers[msg.fileId];
+    if (!t || t.cancelled) return;
 
-    // We need meta, we assume it was set via signaling
-    for (const key in state.transfers) {
-        if (key === fileId) fileMeta = state.transfers[key].file; // Wait, receiver doesn't have File object
+    // Convert Base64 back to binary array buffer
+    const binaryString = atob(msg.chunk);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
     }
-    // Actually, receiver needs meta from initial request. We should store it in state.transfers on 'request'
-    // Let's rely on global state.pendingFiles for receiver
-    const t = state.transfers[fileId];
-    if (!t) return;
 
-    channel.binaryType = 'arraybuffer';
+    t.receivedChunks.push(bytes.buffer);
+    t.receivedSize += bytes.byteLength;
 
-    channel.onmessage = (e) => {
-        if (t.cancelled) return;
-        receivedChunks.push(e.data);
-        receivedSize += e.data.byteLength;
-        bytesSinceLast += e.data.byteLength;
+    const pct = Math.floor((t.receivedSize / t.file.size) * 100);
+    t.ui.updateProgress(t.receivedSize, t.file.size, 'Relaying...');
 
-        const now = Date.now();
-        if (now - lastTime > 500) {
-            const speed = (bytesSinceLast / ((now - lastTime)/1000));
-            t.ui.updateProgress(receivedSize, t.file.size, formatBytes(speed));
-            bytesSinceLast = 0;
-            lastTime = now;
-        }
-
-        if (receivedSize >= t.file.size) {
-            finalizeTransfer(t, receivedChunks);
-        }
-    };
+    if (t.receivedSize >= t.file.size) {
+        finalizeTransfer(t);
+    }
 }
 
-async function finalizeTransfer(t, chunks) {
-    const blob = new Blob(chunks, { type: t.file.type });
+export function handleTransferControl(msg) {
+    if (msg.type === 'file-accept') {
+        startSendingFile(msg.fileId);
+    }
+    if (msg.type === 'file-reject') {
+        if (state.transfers[msg.fileId]) state.transfers[msg.fileId].ui.error('Declined');
+    }
+    if (msg.type === 'file-cancel') {
+        if (state.transfers[msg.fileId]) {
+            state.transfers[msg.fileId].cancelled = true;
+            state.transfers[msg.fileId].ui.error('Cancelled by peer');
+        }
+    }
+}
+
+async function finalizeTransfer(t) {
+    const blob = new Blob(t.receivedChunks, { type: t.file.type });
     t.ui.updateProgress(t.file.size, t.file.size, 'Verifying...');
-    
-    // Check integrity
+
     const hash = await computeSHA256(blob);
-    t.ui.complete(hash.startsWith('File') ? hash : `Hash: ${hash.substring(0,8)}...`);
+    t.ui.complete(`Hash: ${hash.substring(0, 8)}...`);
     playSound('success');
 
-    // Trigger download
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -155,8 +140,4 @@ async function finalizeTransfer(t, chunks) {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-
-    if (window.Notification && Notification.permission === "granted") {
-        new Notification("File Received", { body: t.file.name });
-    }
 }
