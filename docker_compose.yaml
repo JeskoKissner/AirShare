@@ -1,0 +1,24 @@
+services:
+  airdrop-clone:
+    build: .
+    container_name: airdrop-clone
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - APP_NAME=AirShare
+      - SITE_TITLE=AirShare - Fast P2P Transfers
+      - LOGO_URL=/favicon.svg
+      - PRIMARY_COLOR=#4F46E5
+      - BACKGROUND_COLOR=#0F172A
+      - TURN_URL=
+      - TURN_USERNAME=
+      - TURN_PASSWORD=
+      - STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
