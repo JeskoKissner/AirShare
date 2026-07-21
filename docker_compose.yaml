@@ -1,7 +1,8 @@
 services:
-  airdrop-clone:
-    build: .
-    container_name: airdrop-clone
+  airshare:
+    build:
+      context: .
+    container_name: airshare
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -12,9 +13,6 @@ services:
       - LOGO_URL=/favicon.svg
       - PRIMARY_COLOR=#4F46E5
       - BACKGROUND_COLOR=#0F172A
-      - TURN_URL=
-      - TURN_USERNAME=
-      - TURN_PASSWORD=
       - STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
       - LOG_LEVEL=info
     healthcheck:
