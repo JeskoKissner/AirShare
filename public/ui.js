@@ -1,4 +1,4 @@
-import { formatBytes } from './utils.js';
+import { formatBytes, getAvatarForName } from './utils.js';
 
 export const state = {
     myId: null,
@@ -31,7 +31,7 @@ export function renderUsers() {
         card.tabIndex = 0;
         
         card.innerHTML = `
-            <div class="user-avatar">${peer.name.charCodeAt(0) % 2 === 0 ? '🐼' : '🦊'}</div>
+            <div class="user-avatar">${getAvatarForName(peer.name)}</div>
             <div class="user-name">${peer.name}</div>
             <div class="user-device">${peer.device} • ${peer.browser}</div>
         `;

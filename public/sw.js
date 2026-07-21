@@ -1,36 +1,49 @@
-const CACHE_NAME = 'airshare-v2.1';
+const CACHE_NAME = 'airshare-v3';
 const ASSETS = [
     '/',
     '/index.html',
-    '/style.css',
-    '/app.js',
-    '/ui.js',
-    '/transfer.js',
-    '/webrtc.js',
-    '/websocket.js',
-    '/utils.js',
     '/favicon.svg',
     '/manifest.json'
 ];
 
 self.addEventListener('install', event => {
+    self.skipWaiting();
+
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
     );
 });
 
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        Promise.all([
+            caches.keys().then(keys =>
+                Promise.all(
+                    keys
+                        .filter(key => key !== CACHE_NAME)
+                        .map(key => caches.delete(key))
+                )
+            ),
+            self.clients.claim()
+        ])
+    );
+});
+
 self.addEventListener('fetch', event => {
-    // Only cache GET requests for our origin
-    if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    if (
+        event.request.method !== 'GET' ||
+        !event.request.url.startsWith(self.location.origin)
+    ) {
         return;
     }
+
     event.respondWith(
-        caches.match(event.request).then(cached => {
-            return cached || fetch(event.request).then(response => {
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        fetch(event.request)
+            .then(response => {
+                const copy = response.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
                 return response;
-            });
-        }).catch(() => caches.match('/index.html'))
+            })
+            .catch(() => caches.match(event.request))
     );
 });
