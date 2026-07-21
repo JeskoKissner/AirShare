@@ -128,23 +128,6 @@ function setupEventListeners() {
         }
     });
 
-    // Intercept signaling request state hook to store file meta
-    const origSend = sendSignaling;
-    sendSignaling = (msg) => {
-        if (msg.type === 'request' && !msg.from) { /* local out */ }
-        origSend(msg);
-    };
-    // Ensure receiver stores meta globally
-    const _handleSig = window.handleSignalingMessage; // Imported in webrtc.js but handled via event
-    // To cleanly share state without circular deps, transfer.js handles `state.transfers` insertion.
-    // Let's hook the incoming request in app.js
-    const wsOnMessageFallback = (msg) => {
-        if (msg.type === 'request') {
-            state.transfers[msg.file.id] = { file: msg.file, offset: 0, receivedSize: 0, cancelled: false, ui: createTransferUI(msg.file.id, msg.file, msg.file.type, 'in', () => {}, () => {}) };
-        }
-    };
-    // Expose globally for intercept
-    window.hookIncomingRequest = wsOnMessageFallback;
 }
 
 function setupPWA() {

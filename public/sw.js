@@ -1,4 +1,4 @@
-const CACHE_NAME = 'airshare-v1';
+const CACHE_NAME = 'airshare-v2';
 const ASSETS = [
     '/',
     '/index.html',

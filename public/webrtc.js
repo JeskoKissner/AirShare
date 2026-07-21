@@ -41,15 +41,28 @@ export async function createPeerConnection(peerId, config) {
 
 export async function handleSignalingMessage(msg, config) {
     const from = msg.from;
-    if (msg.type === 'request' && window.hookIncomingRequest) {
-    window.hookIncomingRequest(msg);
-}
+
     if (msg.type === 'request') {
         playSound('notify');
+
+        // FIX: Store the incoming file metadata in state so the receiver knows what to download
+        state.transfers[msg.file.id] = {
+            id: msg.file.id,
+            file: msg.file,
+            peerId: from,
+            offset: 0,
+            receivedSize: 0,
+            cancelled: false,
+            ui: createTransferUI(msg.file.id, msg.file, msg.file.type, 'in',
+                () => sendSignaling({ type: 'cancel', to: from, fileId: msg.file.id }),
+                () => {}
+            )
+        };
+
         document.getElementById('modal-backdrop').classList.remove('hidden');
         document.getElementById('modal-request').classList.remove('hidden');
         document.getElementById('request-info').textContent = `${state.peers.find(p=>p.id===from)?.name || 'Unknown'} wants to send: ${msg.file.name}`;
-        
+
         document.getElementById('btn-accept').onclick = () => {
             document.getElementById('modal-backdrop').classList.add('hidden');
             document.getElementById('modal-request').classList.add('hidden');
@@ -63,10 +76,9 @@ export async function handleSignalingMessage(msg, config) {
     }
 
     if (msg.type === 'accept') {
-        // Start WebRTC connection
         const pc = await createPeerConnection(from, config);
         const channel = pc.createDataChannel(`file-${msg.fileId}`, { ordered: true });
-        
+
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignaling({ type: 'offer', to: from, offer });
@@ -90,7 +102,6 @@ export async function handleSignalingMessage(msg, config) {
         }
     }
 
-    // WebRTC lifecycle
     if (msg.type === 'offer') {
         const pc = await createPeerConnection(from, config);
         await pc.setRemoteDescription(new RTCSessionDescription(msg.offer));
@@ -110,7 +121,6 @@ export async function handleSignalingMessage(msg, config) {
     }
 
     if (msg.type === 'resume-request') {
-        // Implement resume by checking received chunks (in memory)
         const t = state.transfers[msg.fileId];
         if (t && t.receivedChunks) {
             sendSignaling({ type: 'resume-accept', to: from, fileId: msg.fileId, offset: t.receivedSize });
