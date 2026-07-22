@@ -1,7 +1,7 @@
-import { state, createTransferUI } from './ui.js';
-import { sendSignaling } from './websocket.js';
-import { formatBytes, computeSHA256 } from './utils.js';
-import { playSound } from './sounds/audio.js';
+import {createTransferUI, showToast, state} from './ui.js';
+import {sendSignaling} from './websocket.js';
+import {computeSHA256, formatBytes} from './utils.js';
+import {playSound} from './sounds/audio.js';
 
 const CHUNK_SIZE = 64 * 1024; // 64 KB
 
@@ -10,7 +10,8 @@ export function initiateTransfer(peerId, file) {
 
     const ui = createTransferUI(fileId, file, file.type, 'out',
         () => cancelTransfer(fileId, peerId),
-        () => {}
+        () => {
+        }
     );
 
     state.transfers[fileId] = {
@@ -20,7 +21,7 @@ export function initiateTransfer(peerId, file) {
     sendSignaling({
         type: 'file-request',
         to: peerId,
-        file: { id: fileId, name: file.name, size: file.size, type: file.type }
+        file: {id: fileId, name: file.name, size: file.size, type: file.type}
     });
 }
 
@@ -29,7 +30,7 @@ function cancelTransfer(fileId, peerId) {
     if (t) {
         t.cancelled = true;
         t.ui.error('Cancelled');
-        sendSignaling({ type: 'file-cancel', to: peerId, fileId });
+        sendSignaling({type: 'file-cancel', to: peerId, fileId});
     }
 }
 
@@ -126,12 +127,24 @@ export function handleTransferControl(msg) {
 }
 
 async function finalizeTransfer(t) {
-    const blob = new Blob(t.receivedChunks, { type: t.file.type });
+    const blob = new Blob(t.receivedChunks, {type: t.file.type});
     t.ui.updateProgress(t.file.size, t.file.size, 'Verifying...');
 
     const hash = await computeSHA256(blob);
     t.ui.complete(`Hash: ${hash.substring(0, 8)}...`);
     playSound('success');
+
+    if (t.file.name.endsWith(".clipboard")) {
+        const text = await blob.text();
+
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast("Copied to clipboard");
+            return;
+        } catch (err) {
+            console.error("Failed:", err);
+        }
+    }
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -139,5 +152,8 @@ async function finalizeTransfer(t) {
     a.download = t.file.name;
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
 }

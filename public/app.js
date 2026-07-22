@@ -37,7 +37,7 @@ function setupEventListeners() {
         if (state.pendingSelection) {
             // It's a text transfer
             const blob = new Blob([state.pendingSelection], { type: 'text/plain' });
-            blob.name = `Message_${Date.now()}.txt`;
+            blob.name = `Message_${Date.now()}.clipboard`;
             initiateTransfer(peerId, blob);
             state.pendingSelection = null;
             showToast('Sending text...');
