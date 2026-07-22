@@ -1,5 +1,5 @@
 export function generateId() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         const r = Math.random() * 16 | 0;
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
@@ -30,7 +30,7 @@ export function getDeviceAndBrowser() {
     else if (/Mac/i.test(ua)) device = "Mac";
     else if (/Linux/i.test(ua)) device = "Linux";
 
-    return { device, browser };
+    return {device, browser};
 }
 
 /* -------------------------------------------------------------------------- */
@@ -38,71 +38,71 @@ export function getDeviceAndBrowser() {
 /* -------------------------------------------------------------------------- */
 
 const ADJECTIVES = [
-    "Swift","Brave","Happy","Lucky","Quiet","Gentle","Wild","Clever","Bright","Golden",
-    "Silver","Crimson","Azure","Emerald","Shadow","Storm","Thunder","Sunny","Lunar","Solar",
-    "Neon","Rapid","Royal","Ancient","Magic","Frozen","Crystal","Cosmic","Silent","Mighty",
-    "Tiny","Curious","Fearless","Playful","Noble","Calm","Glowing","Daring","Friendly","Epic"
+    "Swift", "Brave", "Happy", "Lucky", "Quiet", "Gentle", "Wild", "Clever", "Bright", "Golden",
+    "Silver", "Crimson", "Azure", "Emerald", "Shadow", "Storm", "Thunder", "Sunny", "Lunar", "Solar",
+    "Neon", "Rapid", "Royal", "Ancient", "Magic", "Frozen", "Crystal", "Cosmic", "Silent", "Mighty",
+    "Tiny", "Curious", "Fearless", "Playful", "Noble", "Calm", "Glowing", "Daring", "Friendly", "Epic"
 ];
 
 const ANIMALS = [
-    { name: "Panda", emoji: "🐼" },
-    { name: "Fox", emoji: "🦊" },
-    { name: "Wolf", emoji: "🐺" },
-    { name: "Owl", emoji: "🦉" },
-    { name: "Tiger", emoji: "🐯" },
-    { name: "Bear", emoji: "🐻" },
-    { name: "Lion", emoji: "🦁" },
-    { name: "Seal", emoji: "🦭" },
-    { name: "Koala", emoji: "🐨" },
-    { name: "Otter", emoji: "🦦" },
-    { name: "Hedgehog", emoji: "🦔" },
-    { name: "Raccoon", emoji: "🦝" },
-    { name: "Rabbit", emoji: "🐰" },
-    { name: "Hamster", emoji: "🐹" },
-    { name: "Mouse", emoji: "🐭" },
-    { name: "Cat", emoji: "🐱" },
-    { name: "Dog", emoji: "🐶" },
-    { name: "Monkey", emoji: "🐵" },
-    { name: "Frog", emoji: "🐸" },
-    { name: "Penguin", emoji: "🐧" },
-    { name: "Chicken", emoji: "🐔" },
-    { name: "Duck", emoji: "🦆" },
-    { name: "Eagle", emoji: "🦅" },
-    { name: "Parrot", emoji: "🦜" },
-    { name: "Peacock", emoji: "🦚" },
-    { name: "Flamingo", emoji: "🦩" },
-    { name: "Swan", emoji: "🦢" },
-    { name: "Goose", emoji: "🪿" },
-    { name: "Turtle", emoji: "🐢" },
-    { name: "Crocodile", emoji: "🐊" },
-    { name: "Snake", emoji: "🐍" },
-    { name: "Lizard", emoji: "🦎" },
-    { name: "Octopus", emoji: "🐙" },
-    { name: "Crab", emoji: "🦀" },
-    { name: "Lobster", emoji: "🦞" },
-    { name: "Shrimp", emoji: "🦐" },
-    { name: "Fish", emoji: "🐠" },
-    { name: "Blowfish", emoji: "🐡" },
-    { name: "Dolphin", emoji: "🐬" },
-    { name: "Whale", emoji: "🐋" },
-    { name: "Shark", emoji: "🦈" },
-    { name: "Elephant", emoji: "🐘" },
-    { name: "Rhino", emoji: "🦏" },
-    { name: "Hippo", emoji: "🦛" },
-    { name: "Giraffe", emoji: "🦒" },
-    { name: "Zebra", emoji: "🦓" },
-    { name: "Deer", emoji: "🦌" },
-    { name: "Moose", emoji: "🫎" },
-    { name: "Bison", emoji: "🦬" },
-    { name: "Camel", emoji: "🐫" },
-    { name: "Llama", emoji: "🦙" },
-    { name: "Goat", emoji: "🐐" },
-    { name: "Sheep", emoji: "🐑" },
-    { name: "Cow", emoji: "🐮" },
-    { name: "Pig", emoji: "🐷" },
-    { name: "Boar", emoji: "🐗" },
-    { name: "Horse", emoji: "🐴" },
-    { name: "Unicorn", emoji: "🦄" }
+    {name: "Panda", emoji: "🐼"},
+    {name: "Fox", emoji: "🦊"},
+    {name: "Wolf", emoji: "🐺"},
+    {name: "Owl", emoji: "🦉"},
+    {name: "Tiger", emoji: "🐯"},
+    {name: "Bear", emoji: "🐻"},
+    {name: "Lion", emoji: "🦁"},
+    {name: "Seal", emoji: "🦭"},
+    {name: "Koala", emoji: "🐨"},
+    {name: "Otter", emoji: "🦦"},
+    {name: "Hedgehog", emoji: "🦔"},
+    {name: "Raccoon", emoji: "🦝"},
+    {name: "Rabbit", emoji: "🐰"},
+    {name: "Hamster", emoji: "🐹"},
+    {name: "Mouse", emoji: "🐭"},
+    {name: "Cat", emoji: "🐱"},
+    {name: "Dog", emoji: "🐶"},
+    {name: "Monkey", emoji: "🐵"},
+    {name: "Frog", emoji: "🐸"},
+    {name: "Penguin", emoji: "🐧"},
+    {name: "Chicken", emoji: "🐔"},
+    {name: "Duck", emoji: "🦆"},
+    {name: "Eagle", emoji: "🦅"},
+    {name: "Parrot", emoji: "🦜"},
+    {name: "Peacock", emoji: "🦚"},
+    {name: "Flamingo", emoji: "🦩"},
+    {name: "Swan", emoji: "🦢"},
+    {name: "Goose", emoji: "🪿"},
+    {name: "Turtle", emoji: "🐢"},
+    {name: "Crocodile", emoji: "🐊"},
+    {name: "Snake", emoji: "🐍"},
+    {name: "Lizard", emoji: "🦎"},
+    {name: "Octopus", emoji: "🐙"},
+    {name: "Crab", emoji: "🦀"},
+    {name: "Lobster", emoji: "🦞"},
+    {name: "Shrimp", emoji: "🦐"},
+    {name: "Fish", emoji: "🐠"},
+    {name: "Blowfish", emoji: "🐡"},
+    {name: "Dolphin", emoji: "🐬"},
+    {name: "Whale", emoji: "🐋"},
+    {name: "Shark", emoji: "🦈"},
+    {name: "Elephant", emoji: "🐘"},
+    {name: "Rhino", emoji: "🦏"},
+    {name: "Hippo", emoji: "🦛"},
+    {name: "Giraffe", emoji: "🦒"},
+    {name: "Zebra", emoji: "🦓"},
+    {name: "Deer", emoji: "🦌"},
+    {name: "Moose", emoji: "🫎"},
+    {name: "Bison", emoji: "🦬"},
+    {name: "Camel", emoji: "🐫"},
+    {name: "Llama", emoji: "🦙"},
+    {name: "Goat", emoji: "🐐"},
+    {name: "Sheep", emoji: "🐑"},
+    {name: "Cow", emoji: "🐮"},
+    {name: "Pig", emoji: "🐷"},
+    {name: "Boar", emoji: "🐗"},
+    {name: "Horse", emoji: "🐴"},
+    {name: "Unicorn", emoji: "🦄"}
 ];
 
 function random(arr) {

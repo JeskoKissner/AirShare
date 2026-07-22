@@ -1,4 +1,4 @@
-import { generateId, getDeviceAndBrowser, generateAnimalName, getQRCodeSVG } from './utils.js';
+import {generateId, getDeviceAndBrowser, generateAnimalName, getQRCodeSVG, getAvatarForName} from './utils.js';
 import { state, showToast } from './ui.js';
 import { connectWebSocket, sendSignaling } from './websocket.js';
 import { initiateTransfer } from './transfer.js';
@@ -20,7 +20,7 @@ async function init() {
     state.device = device;
     state.browser = browser;
 
-    document.getElementById('my-name').textContent = localStorage.getItem('nickname');
+    document.getElementById('my-name').textContent = localStorage.getItem('nickname') + ' ' + getAvatarForName(localStorage.getItem('nickname'));
 
     // Request notifications
     if (window.Notification && Notification.permission === "default") {
